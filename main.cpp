@@ -55,7 +55,8 @@ int main()
 
 
     trial_copy.CCD_solver(mapping);
-    return 0;
+
+
 
     // ************************ CCD PART 2   ************************
 

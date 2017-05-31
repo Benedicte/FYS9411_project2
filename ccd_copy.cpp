@@ -172,6 +172,7 @@ void CCD_1::CCD_update(mat mapping, vec amplitudes_old, vec &amplitudes_new){
                         for(int l = 0; l < n_particles; l++){
                             for(int c = n_particles; c < number_of_states; c++){
                                 for(int d = n_particles; d < number_of_states; d++){
+                                    //sum += 0.25*TBME(index(k,l,c,d))*amplitudes_old(index(c,d,i,j))
                                     sum += 0.25*TBME(index(k,l,c,d))*amplitudes_old(index(c,d,i,j))
                                             *amplitudes_old(index(a,b,k,l)); //Third term
                                 }
@@ -232,6 +233,80 @@ void CCD_1::CCD_update(mat mapping, vec amplitudes_old, vec &amplitudes_new){
 
 } //End of function
 
+void CCD_1::CCD_update_matrix(vec amplitudes_old, vec &amplitudes_new){
+
+    double sum = 0;
+    double energy_denom = 0;
+
+    for(int i = 0; i < n_particles; i++){
+        for(int j = 0; j < n_particles; j++){
+            for(int a = n_particles; a < number_of_states; a++){
+                for(int b = n_particles; b < number_of_states; b++){
+
+                    sum = TBME(index(a,b,i,j)); //First term
+
+                    for(int c = n_particles; c < number_of_states; c++){
+                        for(int d = n_particles; d < number_of_states; d++){
+
+                            sum += 0.5*TBME(index(a,b,c,d))*amplitudes_old(index(c,d,i,j)); //Second term
+                        }
+                    }
+
+                    for(int k = 0; k < n_particles; k++){
+                        for(int l = 0; l < n_particles; l++){
+                            sum += 0.5*amplitudes_old(index(a,b,k,l))
+                                    *intermediate_1(k,l,i,j,amplitudes_old); //Third term
+                        }
+                    }
+
+                    for(int k = 0; k < n_particles; k++){
+                        for(int c = n_particles; c < number_of_states; c++){
+                            sum += amplitudes_old(index(a,c,i,k))
+                                    *intermediate_2(k,b,c,j,amplitudes_old); //fourth term
+                            sum -= amplitudes_old(index(b,c,i,k))
+                                    //*intermediate_2(k,b,c,j,amplitudes_old);
+                                    *intermediate_2(k,a,c,j,amplitudes_old);//fifth term switch a and b
+                            sum -= amplitudes_old(index(a,c,j,k))
+                                    //*intermediate_2(k,b,c,j,amplitudes_old); //sixth term switch i and j
+                                    *intermediate_2(k,b,c,i,amplitudes_old);
+                            sum += amplitudes_old(index(b,c,j,k))
+                                    //*intermediate_2(k,b,c,j,amplitudes_old); //seventh term Pijab
+                                    *intermediate_2(k,a,c,i,amplitudes_old);
+                        }
+                    }
+
+                    for(int k = 0; k < n_particles; k++){
+                        sum -= amplitudes_old(index(a,b,i,k))
+                                *intermediate_3(j,k,amplitudes_old);//eigth term
+
+                        sum += amplitudes_old(index(a,b,j,k))
+                                //*intermediate_3(j,k,amplitudes_old); //ninth term Pij
+                                *intermediate_3(i,k,amplitudes_old);
+                    }
+
+                    for(int c = n_particles; c < number_of_states; c++){
+                        sum += amplitudes_old(index(a,c,i,j))
+                                *intermediate_4(b,c,amplitudes_old); //tenth term
+
+                        sum -= amplitudes_old(index(b,c,i,j))
+                                //*intermediate_4(b,c,amplitudes_old); //eleventh term Pab
+                                *intermediate_4(a,c,amplitudes_old);
+
+                    }
+
+                    energy_denom = sp_energies(i) + sp_energies(j) - sp_energies(a) - sp_energies(b);
+                    amplitudes_new(index(a,b,i,j)) = sum/energy_denom;
+
+
+                }//End of main indexes
+            }
+        }
+    }
+
+    return;
+
+}
+
 double CCD_1::CCD_energy(mat mapping, vec amplitudes){
 
     double CCD_energy = 0;
@@ -272,7 +347,8 @@ double CCD_1::CCD_solver(mat mapping){
 
     while(max_iterator > CCD_counter && difference > epsilon){
 
-        CCD_update(mapping, amplitudes_old,amplitudes_new);
+        //CCD_update(mapping, amplitudes_old, amplitudes_new);
+        CCD_update_matrix(amplitudes_old, amplitudes_new);
 
         CCD_energy_new = CCD_energy(mapping, amplitudes_new);
         difference = std::abs(CCD_energy_old - CCD_energy_new);
@@ -334,148 +410,62 @@ int CCD_1::index(int p,int q,int r,int s){
     return index;
 }
 
-/*
+double CCD_1::intermediate_1(int i, int j, int k, int l, vec amplitudes){
 
-double CCD::computeTau(int a, int b, int i, int j) {
+    double value = TBME(index(k,l,i,j));
 
-
-    double val = m_t2_old[a-n_holes][b-n_holes][i][j]
-            + m_t1_old[a-n_holes][i]*m_t1_old[b-n_holes][j]
-            - m_t1_old[b-n_holes][i]*m_t1_old[a-n_holes][j];
-    return val;
-
-}
-
-double CCD::computeW1(int m, int n, int i, int j) {
-
-    int N = m_holeStates;
-    int L = m_basisFunctions;
-
-    double val = m_twoBodyElements[m][n][i][j];
-
-    for(int e = N; e < L; e++){
-        val += m_twoBodyElements[m][n][i][e]*m_t1_old[e-N][j] - m_twoBodyElements[m][n][j][e]*m_t1_old[e-N][i];
-    }
-
-    for(int e = N; e < L; e++){
-        for(int f = N; f < L; f++){
-            val += 0.25*m_twoBodyElements[m][n][e][f]*m_tau[e-N][f-N][i][j];
+    for(int c = n_particles; c < number_of_states; c++){
+        for(int d = n_particles; d < number_of_states; d++){
+            value += 0.5*TBME(index(k,l,c,d))*amplitudes(index(c,d,i,j));
         }
     }
 
-    return val;
+    return value;
+
 }
 
-double CCD::computeW2(int a, int b, int e, int f) {
+double CCD_1::intermediate_2(int k,int b,int c,int j, vec amplitudes){
 
-    int N = m_holeStates;
-    //int L = m_basisFunctions;
+    double value = TBME(index(k,b,c,j));
 
-    double val = m_twoBodyElements[a][b][e][f];
-
-    for(int m=0; m < N; m++) {
-        val -= m_t1_old[b-N][m]*m_twoBodyElements[a][m][e][f] - m_t1_old[a-N][m]*m_twoBodyElements[b][m][e][f];
-        for(int n=0; n < N; n++) {
-            val += 0.25*m_tau[a-N][b-N][m][n]*m_twoBodyElements[m][n][e][f];
+    for(int l = 0; l < n_particles; l++){
+        for(int d = n_particles; d < number_of_states; d++){
+            value += TBME(index(k,l,c,d))*amplitudes(index(d,b,l,j));
         }
     }
 
-    return val;
+    return value;
 }
 
-double CCD::computeW3(int m, int b, int e, int j) {
+double CCD_1::intermediate_3(int j, int k, vec amplitudes){
 
-    int N = m_holeStates;
-    int L = m_basisFunctions;
+    double value = 0;
 
-    double val = m_twoBodyElements[m][b][e][j];
+    for(int l = 0; l < n_particles; l++){
+        for(int c = n_particles; c < number_of_states; c++){
+            for(int d = n_particles; d < number_of_states; d++){
 
-    for(int f = N; f < L; f++) {
-        val += m_twoBodyElements[m][b][e][f]*m_t1_old[f-N][j];
-    }
-
-    for(int n = 0; n < N; n++) {
-        val -= m_t1_old[b-N][n]*m_twoBodyElements[m][n][e][j];
-    }
-
-    for(int n = 0; n < N; n++) {
-        for(int f = N; f < L; f++) {
-            val -= (0.5*m_t2_old[f-N][b-N][j][n]+m_t1_old[f-N][j]*m_t1_old[b-N][n])*m_twoBodyElements[m][n][e][f];
-        }
-    }
-
-    return val;
-}
-
-double CCD::computeF1(int m, int e) {
-
-    int N = m_holeStates;
-    int L = m_basisFunctions;
-
-    double val = m_F[m][e];
-
-    for(int n = 0; n < N; n++) {
-        for(int f = N; f < L; f++){
-            val += m_twoBodyElements[m][n][e][f]*m_t1_old[f-N][n];
-        }
-    }
-
-    return val;
-}
-
-double CCD::computeF2(int m, int i) {
-
-    int N = m_holeStates;
-    int L = m_basisFunctions;
-
-    double val = (1.0-delta(m,i))*m_F[m][i];
-
-    for(int e = N; e < L; e++) {
-        val += 0.5*m_F[m][e]*m_t1_old[e-N][i];
-    }
-
-    for(int e = N; e < L; e++) {
-        for(int n = 0; n < N; n++) {
-            val += m_twoBodyElements[m][n][i][e]*m_t1_old[e-N][n];
-        }
-    }
-
-    for(int n = 0; n < N; n++) {
-        for(int e = N; e < L; e++) {
-            for(int f = N; f < L; f++) {
-                val += 0.5*m_twoBodyElements[m][n][e][f]*m_tau2[e-N][f-N][i][n];
+                value += 0.5*TBME(index(k,l,c,d))*amplitudes(index(c,d,j,l));
             }
         }
     }
 
-    return val;
+    return value;
 }
 
-double CCD::computeF3(int a, int e) {
+double CCD_1::intermediate_4(int b, int c, vec amplitudes){
 
-    int N = m_holeStates;
-    int L = m_basisFunctions;
+    double value = 0;
 
-    double val = (1.0-delta(a,e))*m_F[a][e];
-
-    for(int m = 0; m < N; m++) {
-        val -= 0.5*m_F[m][e]*m_t1_old[a-N][m];
-    }
-
-    for(int m = 0; m < N; m++) {
-        for(int n = 0; n < N; n++) {
-            for(int f = N; f < L; f++) {
-                val -= 0.5*m_twoBodyElements[m][n][e][f]*m_tau2[a-N][f-N][m][n];
+    for(int k = 0; k < n_particles; k++){
+        for(int l = 0; l < n_particles; l++){
+            for(int d = n_particles; d < number_of_states; d++){
+                value -= 0.5*TBME(index(k,l,c,d))*amplitudes(index(b,d,k,l));
             }
         }
     }
 
-    for(int m = 0; m < N; m++) {
-        for(int f = N; f < L; f++) {
-            val += m_twoBodyElements[m][a][f][e]*m_t1_old[f-N][m];
-        }
-    }
+    return value;
 
-    return val;
 }
-*/
+

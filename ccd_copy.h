@@ -32,18 +32,17 @@ public:
     void one_particle_energies(vec sp_energies);
     vec one_particle_energies_new_basis(vec sp_energies, mat mapping);
     void CCD_update(mat mapping, vec amplitudes_old, vec &amplitudes_new);
+    void CCD_update_matrix(vec amplitudes_old, vec &amplitudes_new);
     double CCD_solver(mat mapping);
     double CCD_energy(mat mapping, vec amplitudes);
     double CCD_energy_total(mat mapping);
     int index(int p, int q, int r, int s);
 
-    //double computeTau(int a, int b, int i, int j);
-    //double computeW1(int m, int n, int i, int j);
-    //double computeW2(int a, int b, int e, int f);
-    //double computeW3(int m, int b, int e, int j);
-    //double computeF1(int m, int e);
-    //double computeF2(int m, int i);
-    //double computeF3(int a, int e);
+    double intermediate_1(int k, int l, int i, int j, vec amplitudes);
+    double intermediate_2(int j, int k, int b, int c, vec amplitudes);
+    double intermediate_3(int j, int l, vec amplitudes);
+    double intermediate_4(int b, int c, vec amplitudes);
+
 
 };
 
