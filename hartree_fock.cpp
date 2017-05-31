@@ -392,7 +392,6 @@ double Hartree_fock_equations::total_energy(mat mapping, vec energies){
 
     cout << "single particle contribution " << endl;
 
-    energies.print();
 
     return ground_state_energy;
 }

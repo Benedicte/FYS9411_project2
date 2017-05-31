@@ -4,7 +4,7 @@
 
 using namespace std;
 
-CCD::CCD(int shell_number, int fermi_lv, vec two_body_matrix_elements, vec single_particle_energies)
+CCD::CCD(int shell_number, int fermi_lv, vec single_particle_energies)
 {
     fermi_level = fermi_lv;
 
@@ -12,8 +12,6 @@ CCD::CCD(int shell_number, int fermi_lv, vec two_body_matrix_elements, vec singl
         number_of_states = number_of_states + i*2;
     }
 
-    TBME = two_body_matrix_elements;
-    //TBME.print(std::cout);
     sp_energies = single_particle_energies;
     //sp_energies = zeros<vec>(number_of_states*number_of_states*number_of_states*number_of_states);
 
@@ -48,7 +46,7 @@ vec CCD::one_particle_energies_new_basis(vec sp_energies, mat mapping){
 
     coulomb_function2 test(1, number_of_states, fermi_level);
 
-    /*
+
     cout << "Beginning of the TBME we need" << endl;
 
     for(int i=0; i<fermi_level; i++){
@@ -59,7 +57,6 @@ vec CCD::one_particle_energies_new_basis(vec sp_energies, mat mapping){
     }
 
     cout << "End of the TBME we need" << endl;
-    */
 
     for(int i= 0 ; i < fermi_level; i++){
         ei = sp_energies(i);
@@ -98,10 +95,9 @@ vec CCD::intial_amplitudes_old(mat mapping){
     n_holes = number_of_states - fermi_level;
     n_particles = fermi_level;
 
-    cout << size(TBME)<< endl;
+
     cout << size(initial_amplitudes)<< endl;
 
-    cout << "Size of SP-Energies" << size(sp_energies) << endl;
 
     for(int i = 0; i < n_particles; i++){
         for(int j = 0; j < n_particles; j++){
@@ -252,7 +248,11 @@ double CCD::CCD_solver(mat mapping){
     double CCD_energy_old = 0;
     double CCD_energy_new = 0;
 
+    one_particle_energies_new_basis(sp_energies, mapping);
+
     vec amplitudes_old = intial_amplitudes_old(mapping);
+
+    cout << "intialized amplitudes" << endl;
 
     CCD_energy_new = CCD_energy(mapping, amplitudes_old);
 
@@ -283,7 +283,7 @@ double CCD::CCD_solver(mat mapping){
 
     cout << setprecision(12) << "CCD Energy " << E_ref + CCD_energy_old << endl;
 
-    return 0;
+    return CCD_energy_old;
 }
 
 double CCD::CCD_energy_total(mat mapping){
@@ -295,8 +295,8 @@ double CCD::CCD_energy_total(mat mapping){
     for(int i = 0; i < N; i++) {
         Eref += sp_energies(i);
         for(int j = 0; j < N; j++) {
-            //Eref += 0.5*TBMEl(i,j,i,j, mapping);
-            Eref +=0.5*TBME(index(i,j,i,j));
+            Eref += 0.5*TBMEl(i,j,i,j, mapping);
+            //Eref +=0.5*TBME(index(i,j,i,j));
         }
     }
 

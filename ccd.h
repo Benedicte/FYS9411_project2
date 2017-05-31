@@ -15,7 +15,7 @@ class CCD
 {
 public:
 
-    CCD(int sh_number, int fermi_lv, vec TBME, vec SP_energies);
+    CCD(int sh_number, int fermi_lv, vec SP_energies);
 
     int number_of_states;
     int fermi_level;
