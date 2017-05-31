@@ -263,12 +263,12 @@ void CCD_1::CCD_update_matrix(vec amplitudes_old, vec &amplitudes_new){
                         for(int c = n_particles; c < number_of_states; c++){
                             sum += amplitudes_old(index(a,c,i,k))
                                     *intermediate_2(k,b,c,j,amplitudes_old); //fourth term
-                            sum -= amplitudes_old(index(b,c,i,k))
-                                    //*intermediate_2(k,b,c,j,amplitudes_old);
-                                    *intermediate_2(k,a,c,j,amplitudes_old);//fifth term switch a and b
                             sum -= amplitudes_old(index(a,c,j,k))
                                     //*intermediate_2(k,b,c,j,amplitudes_old); //sixth term switch i and j
                                     *intermediate_2(k,b,c,i,amplitudes_old);
+                            sum -= amplitudes_old(index(b,c,i,k))
+                                    //*intermediate_2(k,b,c,j,amplitudes_old);
+                                    *intermediate_2(k,a,c,j,amplitudes_old);//fifth term switch a and b
                             sum += amplitudes_old(index(b,c,j,k))
                                     //*intermediate_2(k,b,c,j,amplitudes_old); //seventh term Pijab
                                     *intermediate_2(k,a,c,i,amplitudes_old);
@@ -277,11 +277,11 @@ void CCD_1::CCD_update_matrix(vec amplitudes_old, vec &amplitudes_new){
 
                     for(int k = 0; k < n_particles; k++){
                         sum -= amplitudes_old(index(a,b,i,k))
-                                *intermediate_3(j,k,amplitudes_old);//eigth term
+                                *intermediate_3(k,j,amplitudes_old);//eigth term
 
                         sum += amplitudes_old(index(a,b,j,k))
                                 //*intermediate_3(j,k,amplitudes_old); //ninth term Pij
-                                *intermediate_3(i,k,amplitudes_old);
+                                *intermediate_3(k,i,amplitudes_old);
                     }
 
                     for(int c = n_particles; c < number_of_states; c++){
@@ -321,7 +321,6 @@ double CCD_1::CCD_energy(mat mapping, vec amplitudes){
             }
         }
     }
-
     return CCD_energy;
 }
 
@@ -347,8 +346,9 @@ double CCD_1::CCD_solver(mat mapping){
 
     while(max_iterator > CCD_counter && difference > epsilon){
 
-        //CCD_update(mapping, amplitudes_old, amplitudes_new);
-        CCD_update_matrix(amplitudes_old, amplitudes_new);
+        CCD_update(mapping, amplitudes_old, amplitudes_new);
+        //CCD_update_matrix(amplitudes_old, amplitudes_new);
+
 
         CCD_energy_new = CCD_energy(mapping, amplitudes_new);
         difference = std::abs(CCD_energy_old - CCD_energy_new);
@@ -358,6 +358,8 @@ double CCD_1::CCD_solver(mat mapping){
 
         cout << "iteration: " << CCD_counter << endl;
         cout << "CCD energy: " << CCD_energy_old << endl;
+
+
     }
 
     if(max_iterator <= CCD_counter){
@@ -430,14 +432,14 @@ double CCD_1::intermediate_2(int k,int b,int c,int j, vec amplitudes){
 
     for(int l = 0; l < n_particles; l++){
         for(int d = n_particles; d < number_of_states; d++){
-            value += TBME(index(k,l,c,d))*amplitudes(index(d,b,l,j));
+            value += 0.5*TBME(index(k,l,c,d))*amplitudes(index(d,b,l,j));
         }
     }
 
     return value;
 }
 
-double CCD_1::intermediate_3(int j, int k, vec amplitudes){
+double CCD_1::intermediate_3(int k, int j, vec amplitudes){
 
     double value = 0;
 
