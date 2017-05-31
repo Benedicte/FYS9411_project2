@@ -31,7 +31,7 @@ public:
     vec intial_amplitudes_old(mat mapping);
     void one_particle_energies(vec sp_energies);
     vec one_particle_energies_new_basis(vec sp_energies, mat mapping);
-    vec CCD_update(mat mapping, vec amplitudes_old);
+    void CCD_update(mat mapping, vec amplitudes_old, vec &amplitudes_new);
     double CCD_solver(mat mapping);
     double CCD_energy(mat mapping, vec amplitudes);
     double CCD_energy_total(mat mapping);

@@ -93,6 +93,9 @@ vec CCD_1::one_particle_energies_new_basis(vec sp_energies, mat mapping){
 
 vec CCD_1::intial_amplitudes_old(mat mapping){
 
+    cout << number_of_states << endl;
+    cout << fermi_level << endl;
+
     vec initial_amplitudes= zeros<vec>(number_of_states*number_of_states*number_of_states*number_of_states);
 
     n_holes = number_of_states - fermi_level;
@@ -103,10 +106,15 @@ vec CCD_1::intial_amplitudes_old(mat mapping){
 
     cout << "Size of SP-Energies" << size(sp_energies) << endl;
 
+    cout << "HEI" << endl;
+
     for(int i = 0; i < n_particles; i++){
         for(int j = 0; j < n_particles; j++){
             for(int a = n_particles; a < number_of_states; a++){
                 for(int b = n_particles; b < number_of_states; b++){
+
+                    //cout << index(a,b,i,j) << endl;
+
                     initial_amplitudes(index(a,b,i,j)) = TBME(index(a,b,i,j))
                             /(sp_energies(i) + sp_energies(j) - sp_energies(a) - sp_energies(b));
                 }
@@ -114,15 +122,17 @@ vec CCD_1::intial_amplitudes_old(mat mapping){
         }
     }
 
+
+
     return initial_amplitudes;
 }
 
-vec CCD_1::CCD_update(mat mapping, vec amplitudes_old){
+void CCD_1::CCD_update(mat mapping, vec amplitudes_old, vec &amplitudes_new){
 
     double sum = 0.0;
     double energy_denom = 0.0;
 
-    vec amplitudes_new = zeros<vec>(number_of_states*number_of_states*number_of_states*number_of_states);
+    //vec amplitudes_new = zeros<vec>(number_of_states*number_of_states*number_of_states*number_of_states);
 
     for(int i = 0; i < n_particles; i++){
         for(int j = 0; j < n_particles; j++){
@@ -164,7 +174,6 @@ vec CCD_1::CCD_update(mat mapping, vec amplitudes_old){
                                 for(int d = n_particles; d < number_of_states; d++){
                                     sum += 0.25*TBME(index(k,l,c,d))*amplitudes_old(index(c,d,i,j))
                                             *amplitudes_old(index(a,b,k,l)); //Third term
-
                                 }
                             }
                         }
@@ -177,7 +186,6 @@ vec CCD_1::CCD_update(mat mapping, vec amplitudes_old){
                                             *amplitudes_old(index(b,d,j,l)); //Fourth term
                                     sum -= TBME(index(k,l,c,d))*amplitudes_old(index(a,c,j,k))
                                             *amplitudes_old(index(b,d,i,l)); //Fifth term
-
                                 }
                             }
                         }
@@ -220,7 +228,7 @@ vec CCD_1::CCD_update(mat mapping, vec amplitudes_old){
         }
     }
 
-    return amplitudes_new;
+    return;
 
 } //End of function
 
@@ -232,7 +240,7 @@ double CCD_1::CCD_energy(mat mapping, vec amplitudes){
         for(int j = 0; j < n_particles; j++){
             for(int a = n_particles; a < number_of_states; a++){
                 for(int b = n_particles; b < number_of_states; b++){
-                    CCD_energy += 0.25*TBME(index(a,b,i,j))
+                    CCD_energy += 0.25*TBME(index(i,j,a,b))
                             *amplitudes(index(a,b,i,j));
                 }
             }
@@ -252,7 +260,9 @@ double CCD_1::CCD_solver(mat mapping){
     double CCD_energy_old = 0;
     double CCD_energy_new = 0;
 
+
     vec amplitudes_old = intial_amplitudes_old(mapping);
+    vec amplitudes_new(pow(number_of_states,4));
 
     cout << "initialized amplitudes" << endl;
 
@@ -262,12 +272,12 @@ double CCD_1::CCD_solver(mat mapping){
 
     while(max_iterator > CCD_counter && difference > epsilon){
 
-        vec amplitudes_new = CCD_update(mapping, amplitudes_old);
+        CCD_update(mapping, amplitudes_old,amplitudes_new);
 
         CCD_energy_new = CCD_energy(mapping, amplitudes_new);
         difference = std::abs(CCD_energy_old - CCD_energy_new);
         CCD_energy_old = CCD_energy_new;
-        amplitudes_old  = amplitudes_new;
+        amplitudes_old = amplitudes_new;
         CCD_counter ++;
 
         cout << "iteration: " << CCD_counter << endl;
@@ -299,9 +309,12 @@ double CCD_1::CCD_energy_total(mat mapping){
     for(int i = 0; i < N; i++) {
         Eref_single += sp_energies(i);
         for(int j = 0; j < N; j++) {
-            Eref_double +=0.5*TBME(index(i,j,i,j));
+            Eref_double += 0.5*TBME(index(i,j,i,j));
+            cout << 0.5*TBME(index(i,j,i,j)) << endl;
         }
     }
+
+
 
     cout << "Eref single: " << Eref_single << endl;
     cout << "Eref double: " << Eref_double << endl;
@@ -318,7 +331,7 @@ int CCD_1::index(int p,int q,int r,int s){
     int np3 = np2*np;
     int index = p*np3 + q*np2 + r*np + s;
 
-    return(index);
+    return index;
 }
 
 /*

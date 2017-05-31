@@ -13,17 +13,17 @@ Examples::Examples()
 
 }
 
-vec Examples::TwoParticleDotTest() {
+vec Examples::TwoParticleDotTest(int shells) {
 
 
 
     int N = 2;
-    int shells = 3;
+    //int shells = 4;
     int basisFunctions = shells*(shells+1);
 
     int np3 = pow(basisFunctions,3);
     int np2 = pow(basisFunctions,2);
-    int np  = basisFunctions;
+    int np1 = basisFunctions;
 
     vec twoBme = zeros<vec>(pow(basisFunctions,4));
 
@@ -31,11 +31,15 @@ vec Examples::TwoParticleDotTest() {
     double hw = 1.0;
     mat mapping = basis->map_quantum_numbers(basisFunctions);
 
+
+
     for(int p=0; p<basisFunctions; p++) {
 
         int np = mapping(p,0);
         int mp = mapping(p,1);
         int sp = mapping(p,2);
+
+        cout << p << " " << np << " " << mp << " " << sp << endl;
 
         for(int q=0; q<basisFunctions; q++) {
             int nq = mapping(q,0);
@@ -50,7 +54,7 @@ vec Examples::TwoParticleDotTest() {
                     int ms = mapping(s,1);
                     int ss = mapping(s,2);
 
-                    if ( (mp + mq == mr +ms) && (sp+ sq == sr + ss) ){
+                    //if ( (mp + mq == mr +ms) && (sp+ sq == sr + ss) ){
 
                         double direct = 0;
 
@@ -61,14 +65,15 @@ vec Examples::TwoParticleDotTest() {
                         exchange = Coulomb_HO(hw, np, mp, nq, mq, ns, ms, nr, mr);
 
                         double TBMEAS = KroneckerDelta(sp, sr)*KroneckerDelta(sq, ss)*direct
-                                    - KroneckerDelta(sp, ss)*KroneckerDelta(sq, sr)*exchange;
-                        int index = np3*p + np2*q + np*r + s;
+                                       -KroneckerDelta(sp, ss)*KroneckerDelta(sq, sr)*exchange;
+                        int index = np3*p + np2*q + np1*r + s;
                         twoBme(index) = TBMEAS;
+
                         //cout << TBMEAS << " " << p << " " << q << " " << r << " " << s << endl;
-                    }
+                    //}
 
                 }}}}
-
+    //exit(1);
     return twoBme;
 
 }
