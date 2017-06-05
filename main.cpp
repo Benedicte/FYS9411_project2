@@ -3,6 +3,7 @@
 #include "coulomb_functions.h"
 #include "ccd.h"
 #include "ccd_copy.h"
+#include "ccd_matrix.h"
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -23,39 +24,68 @@ int main()
     int particles = 2;
     int shells = 3;
     double hw = 1;
+
     //int basisFunctions = shells*(shells+1);
 
-
     // ************************ HARTREE-FOCK PART    ************************
+
     Basis first(shells);
     mat mapping = first.map_quantum_numbers(first.number_of_states);
     vec sp_energies = first.get_energy();
 
+    int number_of_states = first.number_of_states;
+    int length_of_TBME = pow(number_of_states, 4);
+    vec TBME = zeros<vec>(length_of_TBME);
+
+
     /*
     Hartree_fock_equations trial_1(shells, particles);
-    trial_1.GetCoulombIntegrals(mapping, hw);
-    vec energies = trial_1.hartree_fock_method(mapping);
+    vec energies = trial_1.hartree_fock_method(mapping, hw);
 
-    double ref_energy_HF = trial_1.total_energy(mapping,energies);
+    energies.print();
 
-    cout << "ground state energy " << ref_energy_HF << endl;
+    vec TBME = trial_1.new_basis();
 
-    trial_1.total_energy(mapping, sp_energies);
+    trial_1.total_energy();
     */
+
+    //****************Reading TBME from file****************************
+
+    ifstream myfile;
+    myfile.open ("/Users/benedicte/Programs/fys4410/project_2/CCD/P2S2.txt");
+
+    if (myfile.fail()) {
+        cout << "Could not find file" << endl;
+    }
+
+    double value;
+
+    for(int i = 0; i < number_of_states; i++){
+        myfile >> value;
+        TBME(i) = value;
+    }
+
+
+    myfile.close();
+
+
+
 
    // ************************ CCD PART 1   ************************
 
 
-   // vec TBME_3 = trial_1.TBME;
+    //vec TBME = Examples::TwoParticleDotTest(shells, hw);
 
-    vec TBME_2 = Examples::TwoParticleDotTest(shells);
+    //CCD_1 trial_copy(shells, particles, TBME, energies);
 
+    //CCD_1 trial_copy(shells, particles, TBME, sp_energies);
+    //trial_copy.CCD_solver(mapping);
 
-    CCD_1 trial_copy(shells, particles, TBME_2, sp_energies);
+    CCD_matrix trial_matrix(shells, particles, TBME, sp_energies);
 
+    cout << "Success!" << endl;
 
-    trial_copy.CCD_solver(mapping);
-
+    //trial_matrix.CCD_solver(mapping);
 
 
     // ************************ CCD PART 2   ************************
@@ -65,8 +95,6 @@ int main()
 
     //double CCD_correlated_energy = trial.CCD_solver(mapping);
 
-    //cout << "This is the total CCD energy " << ref_energy_HF + CCD_correlated_energy << endl;
-    //cout << "This is the new total CCD energy " << trial.CCD_energy_total(mapping) + trial.correlated_energy_new << endl;
 
     return 0;
 

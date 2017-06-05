@@ -1,4 +1,4 @@
-#ifndef ABSTRACT_COULOMB.H
+
 #define ABSTRACT_COULOMB.H
 #include "abstract_coulomb.h"
 

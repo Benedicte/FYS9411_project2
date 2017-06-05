@@ -13,7 +13,7 @@ Examples::Examples()
 
 }
 
-vec Examples::TwoParticleDotTest(int shells) {
+vec Examples::TwoParticleDotTest(int shells, double hw) {
 
 
 
@@ -28,7 +28,7 @@ vec Examples::TwoParticleDotTest(int shells) {
     vec twoBme = zeros<vec>(pow(basisFunctions,4));
 
     Basis* basis = new Basis(shells);
-    double hw = 1.0;
+    //double hw = 1.0;
     mat mapping = basis->map_quantum_numbers(basisFunctions);
 
 

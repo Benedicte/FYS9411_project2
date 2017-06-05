@@ -11,7 +11,8 @@ SOURCES += main.cpp \
     test.cpp \
     examples.cpp \
     coulomb_function2.cpp \
-    ccd_copy.cpp
+    ccd_copy.cpp \
+    ccd_matrix.cpp
 
 HEADERS += \
     basis.h \
@@ -22,7 +23,8 @@ HEADERS += \
     examples.h \
     coulomb_function2.h \
     abstract_coulomb.h \
-    ccd_copy.h
+    ccd_copy.h \
+    ccd_matrix.h
 
 LIBS += -L/usr/local/Cellar/armadillo/7.500.0/lib -larmadillo
 

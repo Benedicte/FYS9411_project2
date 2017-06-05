@@ -8,7 +8,7 @@ class Examples
 {
 public:
     Examples();
-    static vec TwoParticleDotTest(int shells);
+    static vec TwoParticleDotTest(int shells, double hw);
     static double KroneckerDelta(int i, int j);
 
 };

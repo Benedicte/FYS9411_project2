@@ -22,10 +22,6 @@ vec Basis::get_energy(){
       sp_energies(i) = energy;
     }
 
-    for(int i = 0; i < number_of_states; i++){
-        cout << "i " << i << " " << mapping(i,0) << " " << mapping(i,1) << " "<<  mapping(i,2) << " " << sp_energies(i)<<endl;
-    }
-
     return sp_energies;
 }
 

@@ -15,7 +15,6 @@ CCD_1::CCD_1(int shell_number, int fermi_lv, vec two_body_matrix_elements, vec s
     TBME = two_body_matrix_elements;
     //TBME.print(std::cout);
     sp_energies = single_particle_energies;
-    //sp_energies = zeros<vec>(number_of_states*number_of_states*number_of_states*number_of_states);
 
 }
 
@@ -46,44 +45,20 @@ vec CCD_1::one_particle_energies_new_basis(vec sp_energies, mat mapping){
 
     double ei,ea;
 
-    coulomb_function2 test(1, number_of_states, fermi_level);
-
-    /*
-    cout << "Beginning of the TBME we need" << endl;
-
-    for(int i=0; i<fermi_level; i++){
-        for(int j = 0; j < fermi_level; j++){
-            cout << (test.calc_TBME(i, j, i, j, mapping)-test.calc_TBME(i, j, j, i, mapping)) << " ";
-        }
-        cout << endl;
-    }
-
-    cout << "End of the TBME we need" << endl;
-    */
-
     for(int i= 0 ; i < fermi_level; i++){
         ei = sp_energies(i);
         for(int j = 0 ; j < fermi_level; j++){
-            //ei += calcVpqrs(i,j,i,j,SPbasis); double
             ei += TBME(index(i,j,i,j));
-        }
-        //sp_energies_newbasis(i) = ei;
+        };
         sp_energies(i) = ei;
     }
 
     for(int a = fermi_level; a < number_of_states; a++){
-        //ea = sp_energies_newbasis(a);
         ea = sp_energies(a);
         for(int j=0; j<fermi_level; j++){
-            //ea += calcVpqrs(a,j,a,j,SPbasis);
             ea += TBME(index(a,j,a,j));
         }
-        //sp_energies_newbasis(a) = ea;
         sp_energies(a) = ea;
-    }
-
-    for(int i = 0; i < number_of_states; i++){
-        cout << mapping(i,0) << " " << mapping(i,1) << " "<<  mapping(i,2) << " " << sp_energies(i)<<endl;
     }
 
     sp_energies_HF = sp_energies;
@@ -91,7 +66,7 @@ vec CCD_1::one_particle_energies_new_basis(vec sp_energies, mat mapping){
     return sp_energies;
 }
 
-vec CCD_1::intial_amplitudes_old(mat mapping){
+vec CCD_1::intial_amplitudes_old(){
 
     cout << number_of_states << endl;
     cout << fermi_level << endl;
@@ -105,8 +80,6 @@ vec CCD_1::intial_amplitudes_old(mat mapping){
     cout << size(initial_amplitudes)<< endl;
 
     cout << "Size of SP-Energies" << size(sp_energies) << endl;
-
-    cout << "HEI" << endl;
 
     for(int i = 0; i < n_particles; i++){
         for(int j = 0; j < n_particles; j++){
@@ -122,12 +95,10 @@ vec CCD_1::intial_amplitudes_old(mat mapping){
         }
     }
 
-
-
     return initial_amplitudes;
 }
 
-void CCD_1::CCD_update(mat mapping, vec amplitudes_old, vec &amplitudes_new){
+void CCD_1::CCD_update(vec amplitudes_old, vec &amplitudes_new){
 
     double sum = 0.0;
     double energy_denom = 0.0;
@@ -307,7 +278,7 @@ void CCD_1::CCD_update_matrix(vec amplitudes_old, vec &amplitudes_new){
 
 }
 
-double CCD_1::CCD_energy(mat mapping, vec amplitudes){
+double CCD_1::CCD_energy(vec amplitudes){
 
     double CCD_energy = 0;
 
@@ -321,7 +292,38 @@ double CCD_1::CCD_energy(mat mapping, vec amplitudes){
             }
         }
     }
-    return CCD_energy;
+    //return CCD_energy;
+
+    cout << "Energy, normal "<< CCD_energy << endl;
+
+    // ********** In Matrix-multiplication format*************//
+
+    mat A = zeros<mat>(n_particles*n_particles, n_holes*n_holes);
+    mat T = zeros<mat>(n_particles*n_particles, n_holes*n_holes);
+
+    for(int i = 0; i < n_particles; i++){
+        for( int j = 0; j < n_particles; j++){
+            for(int a = n_particles; a < number_of_states; a++){
+                for(int b = n_particles; b < number_of_states; b++){
+                    A(j*n_particles+i, (b-n_particles)*n_holes+(a-n_particles)) = TBME(index(i,j,a,b));
+                }
+            }
+        }
+    }
+
+    for(int i = 0; i < n_particles; i++){
+        for( int j = 0; j < n_particles; j++){
+            for(int a = n_particles; a < number_of_states; a++){
+                for(int b = n_particles; b < number_of_states; b++){
+                    T(j*n_particles+i, (b-n_particles)*n_holes+(a-n_particles)) = amplitudes(index(a,b,i,j));
+                }
+            }
+        }
+    }
+
+    double matrix_CCD_energy = 0.25*dot(A,T);
+
+    return matrix_CCD_energy;
 }
 
 double CCD_1::CCD_solver(mat mapping){
@@ -334,23 +336,23 @@ double CCD_1::CCD_solver(mat mapping){
     double CCD_energy_old = 0;
     double CCD_energy_new = 0;
 
+    one_particle_energies_new_basis(sp_energies, mapping);
 
-    vec amplitudes_old = intial_amplitudes_old(mapping);
+    vec amplitudes_old = intial_amplitudes_old();
     vec amplitudes_new(pow(number_of_states,4));
 
     cout << "initialized amplitudes" << endl;
 
-    CCD_energy_new = CCD_energy(mapping, amplitudes_old);
+    CCD_energy_new = CCD_energy(amplitudes_old);
 
     cout << "MBPT2 correction: " <<  setprecision(16) << CCD_energy_new << endl;
 
     while(max_iterator > CCD_counter && difference > epsilon){
 
-        CCD_update(mapping, amplitudes_old, amplitudes_new);
+        CCD_update(amplitudes_old, amplitudes_new);
         //CCD_update_matrix(amplitudes_old, amplitudes_new);
 
-
-        CCD_energy_new = CCD_energy(mapping, amplitudes_new);
+        CCD_energy_new = CCD_energy(amplitudes_new);
         difference = std::abs(CCD_energy_old - CCD_energy_new);
         CCD_energy_old = CCD_energy_new;
         amplitudes_old = amplitudes_new;
@@ -367,7 +369,7 @@ double CCD_1::CCD_solver(mat mapping){
     }
     cout << "The counter reached " << CCD_counter << endl;
 
-    double E_ref = CCD_energy_total(mapping);
+    double E_ref = CCD_energy_total();
 
     cout << "E_ref: " << E_ref << endl;
 
@@ -376,7 +378,7 @@ double CCD_1::CCD_solver(mat mapping){
     return 0;
 }
 
-double CCD_1::CCD_energy_total(mat mapping){
+double CCD_1::CCD_energy_total(){
 
     int N = fermi_level;
 
@@ -392,16 +394,15 @@ double CCD_1::CCD_energy_total(mat mapping){
         }
     }
 
-
-
     cout << "Eref single: " << Eref_single << endl;
     cout << "Eref double: " << Eref_double << endl;
 
-    Eref = Eref_single + Eref_double;
+    Eref = Eref_single - Eref_double; //Se på dette!!
 
     return Eref;
 }
 
+inline
 int CCD_1::index(int p,int q,int r,int s){
 
     int np = number_of_states;
